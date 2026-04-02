@@ -1,23 +1,23 @@
-# 🧠 Seasonal Disease Surge Prediction System
+# Seasonal Disease Surge Prediction System
 
-## 🚀 Overview
+## Overview
 
 The **Seasonal Disease Surge Prediction System** is an AI-powered application that predicts disease outbreaks **2–3 weeks in advance** using environmental and healthcare data.
 It helps healthcare authorities take **proactive measures** instead of reacting after outbreaks occur.
 
 ---
 
-## 🎯 Key Features
+## Key Features
 
-* 🔮 Predicts **disease outbreak risk** (Low / Medium / High)
-* 🦠 Identifies **likely disease type** (Dengue, Flu, Typhoid, etc.)
-* 📊 Interactive dashboard using Streamlit
-* ⚠️ Early warning alerts for proactive healthcare planning
-* 📈 Trend visualization of disease cases
+*  Predicts **disease outbreak risk** (Low / Medium / High)
+*  Identifies **likely disease type** (Dengue, Flu, Typhoid, etc.)
+*  Interactive dashboard using Streamlit
+*  Early warning alerts for proactive healthcare planning
+*  Trend visualization of disease cases
 
 ---
 
-## 🧠 How It Works
+##  How It Works
 
 1. Collects input data:
 
@@ -38,7 +38,7 @@ It helps healthcare authorities take **proactive measures** instead of reacting 
 
 ---
 
-## 📂 Dataset
+##  Dataset
 
 The dataset includes:
 
@@ -51,7 +51,7 @@ The dataset includes:
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 * **Programming Language:** Python
 * **Framework:** Streamlit
@@ -64,7 +64,7 @@ The dataset includes:
 
 ---
 
-## ▶️ How to Run
+##  How to Run
 
 ### 1. Clone the Repository
 
@@ -87,7 +87,7 @@ streamlit run app.py
 
 ---
 
-## 📊 Demo Inputs
+##  Demo Inputs
 
 Example:
 
@@ -95,15 +95,15 @@ Example:
 * Temperature: 34°C
 * OPD Visits: 500
 
-👉 Output:
+ Output:
 
-* 🔴 High Risk
-* ⚠️ Outbreak Alert
-* 🦠 Predicted Disease: Dengue
+*  High Risk
+*  Outbreak Alert
+*  Predicted Disease: Dengue
 
 ---
 
-## 🎯 Use Case
+##  Use Case
 
 * Government healthcare departments
 * Hospitals and clinics
@@ -111,7 +111,7 @@ Example:
 
 ---
 
-## 🌍 Impact
+##  Impact
 
 * Enables **early detection of outbreaks**
 * Improves **resource planning (beds, staff, medicines)**
@@ -120,17 +120,17 @@ Example:
 
 ---
 
-## 🔥 Future Enhancements
+##  Future Enhancements
 
-* 📍 District-wise heatmap visualization
-* 🌐 Real-time data integration
-* 🤖 Advanced models (LSTM, XGBoost)
-* ☁️ Cloud deployment
+*  District-wise heatmap visualization
+*  Real-time data integration
+*  Advanced models (LSTM, XGBoost)
+*  Cloud deployment
 
 
 ---
 
-## ⭐ Acknowledgement
+##  Acknowledgement
 
 This project demonstrates how **AI can transform public healthcare** by enabling predictive and data-driven decision-making.
 
