@@ -1,0 +1,17 @@
+Rainfall,Temperature,opd_visits,Disease_cases,Risk,Disease
+10,30,100,20,0,Flu
+20,31,150,30,0,Flu
+30,32,200,50,0,Flu
+50,33,250,80,1,Dengue
+80,34,300,120,1,Dengue
+100,35,400,200,1,Dengue
+120,36,500,300,1,Dengue
+40,32,180,60,0,Typhoid
+60,33,220,90,1,Typhoid
+90,34,350,150,1,Typhoid
+110,35,450,250,1,Typhoid
+70,33,260,100,1,Cholera
+30,31,170,40,0,Cholera
+20,30,120,25,0,Cholera
+140,37,600,400,1,Respiratory Infection
+150,38,650,450,1,Respiratory Infection
