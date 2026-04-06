@@ -21,7 +21,7 @@ st.markdown("AI-powered system to predict disease outbreaks **2–3 weeks in adv
 # -----------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("Book 1(Sheet1).csv")
+    df = pd.read_csv("tamil_nadu_disease_dataset.csv")
     df.columns = df.columns.str.strip().str.lower()
     return df
 
@@ -43,120 +43,197 @@ if missing:
 # -----------------------------
 st.sidebar.header("🌍 Live Weather Input")
 
-city = st.sidebar.selectbox(
-    "Select District",
-    ["Chennai", "Coimbatore", "Madurai", "Salem", "Trichy"]
-)
+# 🔥 UPDATED: dynamic districts from dataset
+district_list = sorted(data['district'].unique())
 
+city = st.sidebar.selectbox("Select District", district_list)
+
+API_KEY = "d68c839433a113d970341e5746f9aa6a"
+
+# -----------------------------
+# Current Weather
+# -----------------------------
 def get_weather(city):
-    try:
-        api_key = "YOUR_API_KEY"  # 🔥 Replace this
-        url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
-        res = requests.get(url).json()
+    url = "https://api.openweathermap.org/data/2.5/weather"
 
-        temperature = res['main']['temp']
-        humidity = res['main']['humidity']
-        rainfall = res.get('rain', {}).get('1h', 0)
+    params = {
+        "q": city,
+        "appid": API_KEY,
+        "units": "metric"
+    }
 
-        return temperature, humidity, rainfall
-    except:
-        return None, None, None
+    response = requests.get(url, params=params)
+    data = response.json()
 
-temp_live, humidity, rainfall_live = get_weather(city)
+    if str(data.get("cod")) != "200":
+        return None, None
 
-# Fallback
+    temp = data['main']['temp']
+    rain = data.get('rain', {}).get('1h', 0)
+
+    return temp, rain
+
+temp_live, rainfall_live = get_weather(city)
+
 if temp_live is None:
-    st.sidebar.warning("⚠️ Weather API failed. Using default values.")
+    st.sidebar.warning("⚠️ Using default values")
     temp_live = 30
     rainfall_live = 50
+else:
+    st.sidebar.success("✅ Live Weather Loaded")
 
-# Estimate OPD based on temperature
 opd_visits = int(200 + (temp_live * 5))
 
-# Display live values
 st.sidebar.write(f"🌡 Temperature: {temp_live}°C")
 st.sidebar.write(f"🌧 Rainfall: {rainfall_live} mm")
-st.sidebar.write(f"🏥 OPD Visits (estimated): {opd_visits}")
+st.sidebar.write(f"🏥 OPD Visits: {opd_visits}")
 
-# Assign values
 temperature = temp_live
 rainfall = rainfall_live
 
 # -----------------------------
-# Train Model (XGBoost)
+# Train Model
 # -----------------------------
 @st.cache_resource
 def train_model(df):
-    features = ['rainfall', 'temperature', 'opd_visits']
-    
-    X = df[features]
+    X = df[['rainfall', 'temperature', 'opd_visits']]
     y = df['risk']
 
     model = XGBClassifier(n_estimators=150, learning_rate=0.05)
     model.fit(X, y)
 
-    return model, features
+    return model
 
-model, features = train_model(data)
-
-# -----------------------------
-# Find Closest District
-# -----------------------------
-def find_closest_district(df, rainfall, temperature, opd):
-    df = df.copy()
-    df['distance'] = (
-        (df['rainfall'] - rainfall)**2 +
-        (df['temperature'] - temperature)**2 +
-        (df['opd_visits'] - opd)**2
-    )
-    return df.loc[df['distance'].idxmin()]
-
-closest = find_closest_district(data, rainfall, temperature, opd_visits)
-predicted_district = closest['district']
+model = train_model(data)
 
 # -----------------------------
 # Prediction
 # -----------------------------
-input_df = pd.DataFrame([[rainfall, temperature, opd_visits]], columns=features)
+input_df = pd.DataFrame([[rainfall, temperature, opd_visits]],
+                        columns=['rainfall','temperature','opd_visits'])
+
 probability = model.predict_proba(input_df)[0][1]
-predicted_disease = closest['disease']
 
 # -----------------------------
 # Risk Logic
 # -----------------------------
-if probability > 0.7:
-    risk_level = "🔴 HIGH RISK"
-    alert = "⚠️ Outbreak expected in next 2–3 weeks!"
-elif probability > 0.4:
-    risk_level = "🟡 MEDIUM RISK"
-    alert = "⚠️ Moderate risk detected"
-else:
-    risk_level = "🟢 LOW RISK"
-    alert = "✅ No major outbreak expected"
+def get_risk_label(prob):
+    if prob > 0.7:
+        return "🔴 HIGH", "error"
+    elif prob > 0.4:
+        return "🟡 MEDIUM", "warning"
+    else:
+        return "🟢 LOW", "success"
+
+risk_label, _ = get_risk_label(probability)
 
 # -----------------------------
-# Display Results
+# Display Current Prediction
 # -----------------------------
-st.subheader("📊 Prediction Result")
+st.subheader("📊 Current Prediction")
 
-col1, col2 = st.columns(2)
+st.metric("Risk Level", risk_label)
+st.metric("Confidence", f"{round(probability*100,2)}%")
 
-with col1:
-    st.metric("📍 District", predicted_district)
-    st.metric("Risk Level", risk_level)
-    st.metric("Confidence", f"{round(probability*100,2)}%")
+# -----------------------------
+# 🔮 FORECAST FUNCTION
+# -----------------------------
+def get_forecast(city):
+    url = "https://api.openweathermap.org/data/2.5/forecast"
 
-with col2:
-    st.write("### 🦠 Predicted Disease")
-    st.info(predicted_disease)
+    params = {
+        "q": city,
+        "appid": API_KEY,
+        "units": "metric"
+    }
 
-# Alerts
-if "HIGH" in risk_level:
-    st.error(alert)
-elif "MEDIUM" in risk_level:
-    st.warning(alert)
+    response = requests.get(url, params=params)
+    data = response.json()
+
+    forecast = []
+
+    if str(data.get("cod")) != "200":
+        return forecast
+
+    for item in data["list"][:5]:
+        temp = item["main"]["temp"]
+        rain = item.get("rain", {}).get("3h", 0)
+        opd = int(200 + temp * 5)
+
+        forecast.append([rain, temp, opd])
+
+    return forecast
+
+# -----------------------------
+# 🔮 FUTURE PREDICTION
+# -----------------------------
+st.subheader("🔮 Future Outbreak Prediction")
+
+forecast_data = get_forecast(city)
+
+if forecast_data:
+    for i, vals in enumerate(forecast_data):
+        future_df = pd.DataFrame([vals],
+            columns=['rainfall','temperature','opd_visits'])
+
+        prob = model.predict_proba(future_df)[0][1]
+        label, level = get_risk_label(prob)
+
+        if level == "error":
+            st.error(f"Day {i+1}: {label} ({round(prob*100,1)}%)")
+        elif level == "warning":
+            st.warning(f"Day {i+1}: {label} ({round(prob*100,1)}%)")
+        else:
+            st.success(f"Day {i+1}: {label} ({round(prob*100,1)}%)")
 else:
-    st.success(alert)
+    st.warning("Forecast not available")
+
+# -----------------------------
+# 🗺 FUTURE RISK HEATMAP (UPDATED)
+# -----------------------------
+st.subheader("🗺 Future Risk Heatmap")
+
+# 🔥 Use dataset districts
+coords = data[['district']].drop_duplicates().copy()
+
+# Dummy lat/lon mapping (can upgrade later)
+lat_map = np.linspace(8.0, 13.5, len(coords))
+lon_map = np.linspace(76.0, 80.5, len(coords))
+
+coords["lat"] = lat_map
+coords["lon"] = lon_map
+
+future_risks = []
+
+for d in coords["district"]:
+    forecast = get_forecast(d)
+
+    if forecast:
+        vals = forecast[0]
+        df_input = pd.DataFrame([vals],
+            columns=['rainfall','temperature','opd_visits'])
+        p = model.predict_proba(df_input)[0][1]
+    else:
+        p = 0
+
+    future_risks.append(p)
+
+coords["risk"] = future_risks
+
+fig_map = px.scatter_mapbox(
+    coords,
+    lat="lat",
+    lon="lon",
+    size="risk",
+    color="risk",
+    hover_name="district",
+    zoom=5,
+    height=500
+)
+
+fig_map.update_layout(mapbox_style="open-street-map")
+
+st.plotly_chart(fig_map)
 
 # -----------------------------
 # SHAP Explainability
@@ -169,50 +246,6 @@ shap_values = explainer(input_df)
 fig, ax = plt.subplots()
 shap.plots.bar(shap_values, show=False)
 st.pyplot(fig)
-
-# -----------------------------
-# Map Visualization
-# -----------------------------
-st.subheader("🌍 District Risk Map")
-
-coords = pd.DataFrame({
-    "district": ["Chennai", "Coimbatore", "Madurai", "Salem", "Trichy"],
-    "lat": [13.08, 11.01, 9.92, 11.66, 10.79],
-    "lon": [80.27, 76.96, 78.12, 78.14, 78.70],
-})
-
-merged = pd.merge(coords, data.groupby('district')['risk'].mean().reset_index(), on="district")
-
-fig_map = px.scatter_mapbox(
-    merged,
-    lat="lat",
-    lon="lon",
-    size="risk",
-    color="risk",
-    hover_name="district",
-    zoom=5,
-    height=400
-)
-
-fig_map.update_layout(mapbox_style="open-street-map")
-st.plotly_chart(fig_map)
-
-# -----------------------------
-# Trend Visualization
-# -----------------------------
-st.subheader(f"📈 Disease Trend in {predicted_district}")
-
-district_data = data[data['district'] == predicted_district].copy()
-district_data["time"] = range(len(district_data))
-
-fig3 = px.line(
-    district_data,
-    x="time",
-    y="disease_cases",
-    markers=True
-)
-
-st.plotly_chart(fig3)
 
 # -----------------------------
 # Footer
